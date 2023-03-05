@@ -41,10 +41,19 @@ print(one_region.shape,label.shape)
 
 X_train, X_test, y_train, y_test = train_test_split(one_region, label, test_size=0.2)
 
-model = keras.Sequential()
-model.add(keras.layers.LSTM(50,input_shape=(X_train.shape[1], 1)))
-model.add(keras.layers.LSTM(50))
-model.add(keras.layers.Dense(1))
-model.compile(optimizer='adam',loss='mse',metrics = ['accuracy'])
-model.fit(X_train, y_train, epochs=50, batch_size=32)
+# Define the neural network model
+model = keras.models.Sequential([
+    keras.layers.Flatten(),
+    keras.layers.Dense(1024, input_shape=(X_train.shape), activation='sigmoid'),
+    keras.layers.Dense(1024, activation='sigmoid'),
+    keras.layers.Dense(12)
+])
 
+# Compile the model
+model.compile(optimizer='adam', loss='mse',metrics = ['accuracy'])
+
+# Train the model on the data
+model.fit(x = X_train, y = y_train, epochs=600)
+
+# plt.imshow(one_region)
+# plt.show()
