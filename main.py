@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from tensorflow import keras
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
+from csv import writer
 
 
 try:
@@ -30,21 +31,46 @@ month_list = raw_data['MONTH'].to_numpy()
 month_list = month_list.reshape(int(len(month_list)/12),12)
 update_log(f'month list: {month_list}')
 
-one_region = raw_data[regions[0]].to_numpy()
-one_region = one_region.reshape(int(len(one_region)/12),12)
+file = open(f'output.csv','a',newline='')
+obj = writer(file)
+obj.writerow([
+    'MONTH','JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'
+])
+file.close()
 
-one_region = np.nan_to_num(one_region, copy=True, nan=1, posinf=None, neginf=None)
+for region in regions:
+    one_region = raw_data[region].to_numpy()
+    one_region = one_region.reshape(int(len(one_region)/12),12)
 
-label = np.random.rand(one_region.shape[0],one_region.shape[1])
+    one_region = np.nan_to_num(one_region, copy=True, nan=1, posinf=None, neginf=None)
+    one_region_lagged = one_region[:-1].copy()
+    label = one_region[1:].copy()
 
-print(one_region.shape,label.shape)
+    X_train = one_region_lagged
+    y_train = label
 
-X_train, X_test, y_train, y_test = train_test_split(one_region, label, test_size=0.2)
+    test = np.array([one_region[-1]])
 
-model = keras.Sequential()
-model.add(keras.layers.LSTM(50,input_shape=(X_train.shape[1], 1)))
-model.add(keras.layers.LSTM(50))
-model.add(keras.layers.Dense(1))
-model.compile(optimizer='adam',loss='mse',metrics = ['accuracy'])
-model.fit(X_train, y_train, epochs=50, batch_size=32)
+    model = keras.models.Sequential([
+        keras.layers.Flatten(),
+        keras.layers.Dense(128, input_shape=(X_train.shape), activation='relu'),
+        keras.layers.Dense(128, activation='relu'),
+        keras.layers.Dense(12)
+    ])
 
+    model.compile(optimizer='adam', loss='mse',metrics = ['accuracy'])
+
+    model.fit(x = X_train, y = y_train, epochs=2000)
+
+    outcome = model.predict(test)[0]
+    
+    final_output = np.append([region],outcome)
+    
+    file = open(f'output.csv','a',newline='')
+    obj = writer(file)
+    obj.writerow(final_output)
+    file.close()
+
+data = pd.read_csv('output.csv')
+data = data.transpose()
+data.to_csv('output.csv',header=None)
