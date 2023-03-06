@@ -6,6 +6,7 @@ from tensorflow import keras
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 from csv import writer
+from scipy.fftpack import fft,ifft,fftshift
 
 
 try:
@@ -41,28 +42,56 @@ file.close()
 for region in regions:
     one_region = raw_data[region].to_numpy()
     one_region = one_region.reshape(int(len(one_region)/12),12)
-
-    one_region = np.nan_to_num(one_region, copy=True, nan=1, posinf=None, neginf=None)
+    arr_for_avg = np.nan_to_num(one_region, copy=True, nan=0, posinf=None, neginf=None)
+    one_region = np.nan_to_num(one_region, copy=True, nan=-999, posinf=None, neginf=None)
+    print(one_region.shape)
+    print(len(arr_for_avg[:,0]))
+    for i in range(len(one_region[0])):
+        avg = np.average(arr_for_avg[:,i])
+        _max = np.max(arr_for_avg[:,i])
+        _min = np.min(arr_for_avg[:,i])
+        for j in range(len(one_region)):
+            if one_region[j,i] == -999:
+                one_region[j,i] = avg
+            if one_region[j,i] > _max - _min:
+                one_region[j,i] = _max - _min
+            if one_region[j,i] < _min + _min:
+                one_region[j,i] = _min + _min
+    
+    
+    temp = []
+    for i in range(len(one_region[0])):
+        t_fft = fft(one_region[:,i])
+        t1 = t_fft[:int(len(t_fft)/2)]
+        t2 = t_fft[int(len(t_fft)/2):]
+        t = np.append(t_fft,np.zeros(len(t_fft)*2))
+        t = np.append(t,t2)
+        t = ifft(fftshift(t))
+        t = t*2
+        temp.append(t)
+    one_region = np.array(temp).T
+    
     one_region_lagged = one_region[:-1].copy()
     label = one_region[1:].copy()
 
     X_train = one_region_lagged
     y_train = label
-
+    print(f'x_train_shape: {X_train.shape}')
     test = np.array([one_region[-1]])
 
     model = keras.models.Sequential([
         keras.layers.Flatten(),
-        keras.layers.Dense(128, input_shape=(X_train.shape), activation='relu'),
+        keras.layers.Dense(128, input_shape=(X_train[0].shape), activation='relu'),
         keras.layers.Dense(128, activation='relu'),
         keras.layers.Dense(12)
     ])
 
-    model.compile(optimizer='adam', loss='mse',metrics = ['accuracy'])
+    model.compile(optimizer='adam', loss='mse',metrics = [keras.metrics.RootMeanSquaredError()])
 
-    model.fit(x = X_train, y = y_train, epochs=2000)
+    
+    model.fit(x = X_train, y = y_train, epochs=1000)
 
-    outcome = model.predict(test)[0]
+    outcome = np.abs(model.predict(one_region)[0])
     
     final_output = np.append([region],outcome)
     
