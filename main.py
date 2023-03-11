@@ -74,10 +74,10 @@ for region in regions:
     #     temp.append(t)
     # one_region = np.array(temp).T
     
-    plt.plot(np.abs(one_region[:,7]))
-    plt.show()
+    # plt.plot(np.abs(one_region[:,7]))
+    # plt.show()
     
-    sys.exit()
+    # sys.exit()
     
     one_region_lagged = one_region[:-1].copy()
     label = one_region[1:].copy()
