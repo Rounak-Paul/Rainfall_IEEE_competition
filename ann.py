@@ -53,7 +53,7 @@ model = keras.models.Sequential([
 model.compile(optimizer='adam', loss='mse',metrics = ['accuracy'])
 
 # Train the model on the data
-model.fit(x = X_train, y = y_train, epochs=600)
+# model.fit(x = X_train, y = y_train, epochs=600)
 
-# plt.imshow(one_region)
-# plt.show()
+plt.imshow(one_region)
+plt.show()

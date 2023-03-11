@@ -7,6 +7,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 from csv import writer
 from scipy.fftpack import fft,ifft,fftshift
+import sys
 
 
 try:
@@ -38,6 +39,8 @@ obj.writerow([
     'MONTH','JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'
 ])
 file.close()
+
+
 
 for region in regions:
     one_region = raw_data[region].to_numpy()
@@ -71,6 +74,11 @@ for region in regions:
     #     temp.append(t)
     # one_region = np.array(temp).T
     
+    plt.plot(np.abs(one_region[:,7]))
+    plt.show()
+    
+    sys.exit()
+    
     one_region_lagged = one_region[:-1].copy()
     label = one_region[1:].copy()
 
@@ -86,14 +94,14 @@ for region in regions:
         keras.layers.Dense(1024, activation='tanh'),
         keras.layers.Dense(1024, activation='tanh'),
         keras.layers.Dense(1024, activation='tanh'),
-        keras.layers.Dense(1024, activation='linear'),
+        keras.layers.Dense(1024, activation='tanh'),
         keras.layers.Dense(12)
     ])
 
     model.compile(optimizer='adam', loss='mean_squared_error',metrics = [keras.metrics.RootMeanSquaredError()])
 
     
-    model.fit(x = X_train, y = y_train, epochs=10)
+    model.fit(x = X_train, y = y_train, epochs=40)
 
     outcome = np.abs(model.predict(one_region)[0])
     
